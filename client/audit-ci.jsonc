@@ -1,0 +1,11 @@
+{
+  "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
+  // Fails on any high or critical advisory, dev dependencies included.
+  "high": true,
+  "allowlist": [
+    // braces ReDoS via stylelint → micromatch. No patched braces release exists yet and the only
+    // offered "fix" downgrades stylelint to 7.x. Dev-only: it parses our own lint globs.
+    // TODO: remove once braces ships a fix (run `npm run audit` without this entry to check).
+    "GHSA-vfj7-8cjw-p6xm",
+  ],
+}

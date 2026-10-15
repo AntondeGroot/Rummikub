@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<ruleset name="Rummikub PMD Rules"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+  <description>PMD rules for Rummikub. Exclusions follow the global table in ChecklistForProjects.</description>
+
+  <rule ref="category/java/bestpractices.xml">
+    <!-- SLF4J's parameterized logging is already a no-op when the level is off -->
+    <exclude name="GuardLogStatement"/>
+    <!-- Spring APIs (ResponseEntity, HttpHeaders) use concrete types by design -->
+    <exclude name="LooseCoupling"/>
+    <!-- MockMvc's andExpect() chains are assertions, which PMD does not recognise -->
+    <exclude name="UnitTestShouldIncludeAssert"/>
+    <exclude name="UnitTestContainsTooManyAsserts"/>
+  </rule>
+
+  <rule ref="category/java/errorprone.xml">
+    <exclude name="MissingSerialVersionUID"/>
+    <exclude name="UseLocaleWithCaseConversions"/>
+    <!-- Record-like accessor pattern: field 'foo' + method 'foo()' -->
+    <exclude name="AvoidFieldNameMatchingMethodName"/>
+    <!-- Game rules use small literals (set sizes, run lengths) that read best inline -->
+    <exclude name="AvoidLiteralsInIfCondition"/>
+    <!-- 'return first match' is a clear search pattern -->
+    <exclude name="AvoidBranchingStatementAsLastInLoop"/>
+    <!-- Package names and endpoint paths in ArchUnit rules and tests are clearer inline -->
+    <exclude name="AvoidDuplicateLiterals"/>
+  </rule>
+
+  <rule ref="category/java/performance.xml">
+    <!-- Building tiles and sets constructs domain objects in loops by nature -->
+    <exclude name="AvoidInstantiatingObjectsInLoops"/>
+  </rule>
+
+</ruleset>
