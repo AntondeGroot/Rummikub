@@ -5,6 +5,12 @@
 <module name="Checker">
   <property name="severity" value="error"/>
 
+  <!-- Short files: a file over 200 lines is almost always doing more than one thing (readable-code
+       rule 3). Counts every line, comments included. Test files are exempt in the suppressions. -->
+  <module name="FileLength">
+    <property name="max" value="200"/>
+  </module>
+
   <module name="TreeWalker">
 
     <!-- Allow // NOCHECKSTYLE <RuleName> inline suppressions on the same line -->

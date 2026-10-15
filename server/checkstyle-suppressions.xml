@@ -9,6 +9,9 @@
   <!-- Test files: star imports for Assertions.* and MockMvc matchers are standard practice -->
   <suppress files="[/\\]test[/\\]" checks="AvoidStarImport"/>
 
+  <!-- Tests are legitimately long (fixtures, setup), same as the client's spec exemption -->
+  <suppress files="[/\\]test[/\\]" checks="FileLength"/>
+
   <!-- ArchUnit rules are camelCase static-final fields by convention so each reads as a sentence
        (and reports as a readable test name); UPPER_SNAKE would defeat that. -->
   <suppress files="ArchitectureTest\.java" checks="ConstantName"/>
