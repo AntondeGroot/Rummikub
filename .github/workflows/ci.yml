@@ -36,16 +36,25 @@ jobs:
         run: npm ci
         working-directory: client
 
+      # npm audit --audit-level=high, with known unfixable advisories allowlisted in audit-ci.jsonc.
+      - name: Security audit
+        run: npm run audit
+        working-directory: client
+
       - name: Lint
         run: npm run lint
+        working-directory: client
+
+      - name: Lint styles
+        run: npm run lint:styles
         working-directory: client
 
       - name: Format check
         run: npm run format:check
         working-directory: client
 
-      - name: Run tests
-        run: npm test -- --watch=false
+      - name: Run tests with coverage
+        run: npm test -- --watch=false --coverage
         working-directory: client
 
       - name: Build

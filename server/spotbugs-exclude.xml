@@ -1,0 +1,13 @@
+<FindBugsFilter>
+  <!-- Skip all OpenAPI-generated code -->
+  <Match>
+    <Package name="~nl\.adg\.rummikub\.generated.*"/>
+  </Match>
+
+  <!-- Spring beans in the web layer store constructor-injected singletons; a defensive copy of a
+       Spring-managed bean is meaningless. -->
+  <Match>
+    <Package name="~nl\.adg\.rummikub\.web.*"/>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+  </Match>
+</FindBugsFilter>

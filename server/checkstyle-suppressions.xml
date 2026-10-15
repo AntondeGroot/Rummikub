@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.0//EN"
+    "https://checkstyle.org/dtds/suppressions_1_0.dtd">
+<suppressions>
+  <!-- Generated sources -->
+  <suppress files="[/\\]generated[/\\]" checks=".*"/>
+
+  <!-- Test files: star imports for Assertions.* and MockMvc matchers are standard practice -->
+  <suppress files="[/\\]test[/\\]" checks="AvoidStarImport"/>
+
+  <!-- ArchUnit rules are camelCase static-final fields by convention so each reads as a sentence
+       (and reports as a readable test name); UPPER_SNAKE would defeat that. -->
+  <suppress files="ArchitectureTest\.java" checks="ConstantName"/>
+</suppressions>

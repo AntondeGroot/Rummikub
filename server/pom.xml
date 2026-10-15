@@ -21,6 +21,16 @@
   <properties>
     <java.version>25</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <spotbugs.version>4.10.5.0</spotbugs.version>
+    <checkstyle-plugin.version>3.6.0</checkstyle-plugin.version>
+    <checkstyle-tool.version>14.3.0</checkstyle-tool.version>
+    <pmd.version>3.28.0</pmd.version>
+    <spotless.version>3.10.4</spotless.version>
+    <errorprone.version>2.50.0</errorprone.version>
+    <nullaway.version>0.14.2</nullaway.version>
+    <!-- Pinned above the Spring Boot BOM's managed version: Java 25 is non-LTS and older JaCoCo
+         cannot instrument its class files. -->
+    <jacoco.version>0.8.15</jacoco.version>
   </properties>
 
   <dependencies>
@@ -45,6 +55,14 @@
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- Architecture rules. Pinned explicitly (not BOM-managed) so the version can parse Java 25
+         class files. -->
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit-junit5</artifactId>
+      <version>1.5.1</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -64,7 +82,26 @@
             <arg>-Xlint:all</arg>
             <arg>-Xlint:-processing</arg>
             <arg>-Werror</arg>
+            <!-- Error Prone runs as a javac plugin; the JVM exports it needs are in .mvn/jvm.config.
+                 NullAway covers the whole nl.adg.rummikub tree, so any new package is null-checked by
+                 default. Generated code and test sources are not analysed, but the generated DTOs' own
+                 nullability annotations are still honoured at call sites. -->
+            <arg>-XDcompilePolicy=simple</arg>
+            <arg>--should-stop=ifError=FLOW</arg>
+            <arg>-Xplugin:ErrorProne -XepExcludedPaths:.*(/generated-sources/|/src/test/).* -Xep:NullAway:ERROR -XepOpt:NullAway:AnnotatedPackages=nl.adg.rummikub</arg>
           </compilerArgs>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>com.google.errorprone</groupId>
+              <artifactId>error_prone_core</artifactId>
+              <version>${errorprone.version}</version>
+            </path>
+            <path>
+              <groupId>com.uber.nullaway</groupId>
+              <artifactId>nullaway</artifactId>
+              <version>${nullaway.version}</version>
+            </path>
+          </annotationProcessorPaths>
         </configuration>
       </plugin>
 
@@ -86,6 +123,157 @@
                   <version>[21,)</version>
                 </requireJavaVersion>
                 <banDuplicatePomDependencyVersions/>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>${spotless.version}</version>
+        <configuration>
+          <java>
+            <excludes>
+              <exclude>**/generated/**</exclude>
+            </excludes>
+            <!-- google-java-format uses internal javac APIs incompatible with Java 25.
+                 Use basic hygiene rules until support is added. -->
+            <trimTrailingWhitespace/>
+            <endWithNewline/>
+            <importOrder/>
+            <removeUnusedImports/>
+          </java>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>${checkstyle-plugin.version}</version>
+        <dependencies>
+          <dependency>
+            <groupId>com.puppycrawl.tools</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>${checkstyle-tool.version}</version>
+          </dependency>
+        </dependencies>
+        <configuration>
+          <configLocation>checkstyle.xml</configLocation>
+          <suppressionsLocation>checkstyle-suppressions.xml</suppressionsLocation>
+          <includeTestSourceDirectory>true</includeTestSourceDirectory>
+          <excludes>**/generated/**</excludes>
+          <consoleOutput>true</consoleOutput>
+          <failsOnError>true</failsOnError>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-pmd-plugin</artifactId>
+        <version>${pmd.version}</version>
+        <configuration>
+          <rulesets>
+            <ruleset>pmd-rules.xml</ruleset>
+          </rulesets>
+          <excludes>
+            <exclude>**/generated/**</exclude>
+          </excludes>
+          <!-- PMD lags the Java release cycle; target the latest LTS it parses. -->
+          <targetJdk>21</targetJdk>
+          <printFailingErrors>true</printFailingErrors>
+          <failOnViolation>true</failOnViolation>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-maven-plugin</artifactId>
+        <version>${spotbugs.version}</version>
+        <configuration>
+          <excludeFilterFile>${project.basedir}/spotbugs-exclude.xml</excludeFilterFile>
+          <effort>Max</effort>
+          <threshold>Medium</threshold>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Test coverage. The Spring bootstrap class carries no testable logic. -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco.version}</version>
+        <configuration>
+          <excludes>
+            <exclude>nl/adg/rummikub/RummikubApplication.class</exclude>
+            <exclude>nl/adg/rummikub/generated/**</exclude>
+          </excludes>
+        </configuration>
+        <executions>
+          <execution>
+            <id>prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>check</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <rule>
+                  <element>BUNDLE</element>
+                  <limits>
+                    <limit>
+                      <counter>LINE</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>0.90</minimum>
+                    </limit>
+                    <limit>
+                      <counter>BRANCH</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>0.90</minimum>
+                    </limit>
+                  </limits>
+                </rule>
               </rules>
             </configuration>
           </execution>
@@ -153,6 +341,32 @@
                     </resource>
                   </resources>
                 </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- Run with: mvn verify -P security-check (needs NVD_API_KEY). Runs weekly in CI, not on PRs. -->
+    <profile>
+      <id>security-check</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.owasp</groupId>
+            <artifactId>dependency-check-maven</artifactId>
+            <version>13.0.0</version>
+            <configuration>
+              <nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
+              <failBuildOnCVSS>7</failBuildOnCVSS>
+              <suppressionFile>dependency-check-suppressions.xml</suppressionFile>
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>check</goal>
+                </goals>
               </execution>
             </executions>
           </plugin>

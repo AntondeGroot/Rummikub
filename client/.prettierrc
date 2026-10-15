@@ -3,10 +3,11 @@
   "singleQuote": true,
   "overrides": [
     {
-      "files": "*.html",
+      "files": "src/app/**/*.html",
       "options": {
         "parser": "angular"
       }
     }
-  ]
+  ],
+  "quoteProps": "consistent"
 }
