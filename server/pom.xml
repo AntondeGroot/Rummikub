@@ -94,4 +94,71 @@
     </plugins>
   </build>
 
+  <profiles>
+    <!-- Bundles the Angular client into the WAR's static resources: mvn verify -P frontend.
+         Built with base-href /rummikub/, the context path Tomcat serves rummikub.war under. -->
+    <profile>
+      <id>frontend</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>3.6.4</version>
+            <executions>
+              <execution>
+                <id>npm-ci</id>
+                <phase>prepare-package</phase>
+                <goals><goal>exec</goal></goals>
+                <configuration>
+                  <executable>npm</executable>
+                  <arguments><argument>ci</argument></arguments>
+                  <workingDirectory>${project.basedir}/../client</workingDirectory>
+                </configuration>
+              </execution>
+              <execution>
+                <id>npm-build</id>
+                <phase>prepare-package</phase>
+                <goals><goal>exec</goal></goals>
+                <configuration>
+                  <executable>npm</executable>
+                  <arguments>
+                    <argument>run</argument>
+                    <argument>build</argument>
+                    <argument>--</argument>
+                    <argument>--configuration=production</argument>
+                    <argument>--base-href=/rummikub/</argument>
+                  </arguments>
+                  <workingDirectory>${project.basedir}/../client</workingDirectory>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-resources-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>copy-angular-dist</id>
+                <phase>prepare-package</phase>
+                <goals><goal>copy-resources</goal></goals>
+                <configuration>
+                  <outputDirectory>${project.build.outputDirectory}/public</outputDirectory>
+                  <overwrite>true</overwrite>
+                  <resources>
+                    <resource>
+                      <directory>${project.basedir}/../client/dist/client/browser</directory>
+                      <includes><include>**/*</include></includes>
+                      <filtering>false</filtering>
+                    </resource>
+                  </resources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
 </project>

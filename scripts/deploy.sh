@@ -16,8 +16,12 @@ fi
 SSH="ssh -i ~/.ssh/pi_deploy_key $TARGET"
 SCP="scp -i ~/.ssh/pi_deploy_key"
 
-echo "🔨 Building and running all backend tests..."
-mvn clean verify --file server/pom.xml
+echo "🔨 Linting and testing the client..."
+(cd client && npm ci && npm run lint && npm run format:check && CI=1 npx ng test --watch=false)
+
+# The frontend profile builds the client with base-href /rummikub/ and bundles it into the WAR.
+echo "🔨 Building frontend and running all backend tests..."
+mvn clean verify -P frontend --file server/pom.xml
 
 # Tomcat itself is provisioned by the GameRoom project (setup-tomcat.sh); this script only drops
 # the WAR in. rummikub.war is served at /rummikub.
