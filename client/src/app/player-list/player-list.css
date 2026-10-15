@@ -1,0 +1,93 @@
+.player-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+}
+
+.player-card.active-turn {
+  border-color: #f9a825;
+  box-shadow: 0 0 10px rgb(249 168 37 / 35%);
+}
+
+/* ── Header row: avatar + name + active pip ──────────────────── */
+
+.player-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid #ccc;
+  background: #e8e8e8;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.player-card.active-turn .avatar {
+  border-color: #f9a825;
+  box-shadow: 0 0 6px rgb(249 168 37 / 50%);
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(1.4);
+}
+
+.initials {
+  font-size: 13px;
+  font-weight: 700;
+  color: #555;
+  line-height: 1;
+}
+
+.player-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #444;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.player-name.active-name {
+  color: #b8860b;
+}
+
+.turn-done {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #43a047;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: white;
+  line-height: 1;
+  box-shadow: 0 0 4px rgb(67 160 71 / 60%);
+}
+
+/* ── No-others placeholder ───────────────────────────────────── */
+
+.no-others {
+  font-size: 12px;
+  color: #999;
+  text-align: center;
+  padding: 16px 0;
+  margin: 0;
+}
