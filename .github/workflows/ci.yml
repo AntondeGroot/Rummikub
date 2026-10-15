@@ -22,12 +22,42 @@ jobs:
       - name: Build and test backend
         run: mvn -B clean verify --file server/pom.xml
 
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: client
+
+      - name: Lint
+        run: npm run lint
+        working-directory: client
+
+      - name: Format check
+        run: npm run format:check
+        working-directory: client
+
+      - name: Run tests
+        run: npm test -- --watch=false
+        working-directory: client
+
+      - name: Build
+        run: npm run build
+        working-directory: client
+
   # The only check the branch ruleset requires, so jobs can be added or renamed without editing it.
   # `if: always()` matters: without it a failed dependency skips this job, and a skipped required
   # check counts as passing.
   ci:
     if: always()
-    needs: [backend]
+    needs: [backend, frontend]
     runs-on: ubuntu-latest
     steps:
       - run: exit 1
