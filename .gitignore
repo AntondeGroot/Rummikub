@@ -26,3 +26,9 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+/.idea/
+
+# Maven build output
+server/target/
+/target/
+.DS_Store
