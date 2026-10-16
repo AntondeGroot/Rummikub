@@ -1,0 +1,177 @@
+openapi: 3.1.0
+info:
+  title: Shared game API
+  version: 1.0.0
+  description: |
+    Endpoints every hosted game offers to its own browser client, independent of the game's rules:
+    listing games, playing again, the player list, leaving, and the final scores.
+
+    This is one of three specs. `gameroom-api.yml` holds what the GameRoom server calls, the
+    game's own spec holds its rules-specific endpoints, and this one holds what is common to every
+    game's client. No path + method may appear in more than one of them.
+
+servers:
+  # Relative to the serving origin; the generated client overrides it at runtime with environment.apiBaseUrl.
+  - url: /
+    description: Same-origin
+
+paths:
+  /games:
+    get:
+      summary: List all active games
+      operationId: getAllGames
+      tags: [games]
+      responses:
+        '200':
+          description: A list of games
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GameInfo'
+
+  /games/{sessionId}/restart:
+    post:
+      summary: Restart a finished game with the same players but new game options
+      description: Keeps the session ID, player IDs and names. Only valid when the game is FINISHED.
+      operationId: restartGame
+      tags: [games]
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RestartGameRequest'
+      responses:
+        '200':
+          description: Game restarted
+        '404':
+          description: Game not found
+        '409':
+          description: Game is not finished and cannot be restarted
+
+  /games/{sessionId}/players:
+    get:
+      summary: Get all players in a game
+      operationId: getAllPlayersInGame
+      tags: [players]
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+      responses:
+        '200':
+          description: All players in turn order
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Player'
+        '404':
+          description: Game not found
+
+  /games/{sessionId}/players/{playerId}:
+    delete:
+      summary: Remove a player from a game (player leaves voluntarily)
+      operationId: leaveGame
+      tags: [players]
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+        - $ref: '#/components/parameters/playerId'
+      responses:
+        '204':
+          description: Player left the game
+        '404':
+          description: Game or player not found
+
+  /games/{sessionId}/scores:
+    get:
+      summary: Get scores for all players
+      description: Per-player score breakdown. Only available after game over.
+      operationId: getScores
+      tags: [games]
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+      responses:
+        '200':
+          description: Map of playerId to ScoreCard
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/ScoreCard'
+        '404':
+          description: Game not found
+        '409':
+          description: Game not yet finished
+
+components:
+  parameters:
+    sessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema:
+        type: string
+    playerId:
+      name: playerId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    GameStatus:
+      type: string
+      enum: [WAITING, IN_PROGRESS, FINISHED]
+
+    GameInfo:
+      type: object
+      required: [id, roomName, nrPlayers, maxNrPlayers, status]
+      properties:
+        id:
+          type: string
+        roomName:
+          type: string
+        nrPlayers:
+          type: integer
+        maxNrPlayers:
+          type: integer
+        status:
+          $ref: '#/components/schemas/GameStatus'
+
+    RestartGameRequest:
+      type: object
+      properties:
+        gameOptions:
+          type: object
+          description: The new option values, keyed like the GameRoom's NewGameRequest.gameOptions.
+          additionalProperties: {}
+
+    Player:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        profilePic:
+          type: integer
+          description: Zero-based global sprite index chosen in the GameRoom lobby.
+
+    ScoreCard:
+      type: object
+      required: [pointsPerGame, total]
+      properties:
+        pointsPerGame:
+          type: object
+          description: Points per round, keyed by round number.
+          additionalProperties:
+            type: integer
+        total:
+          type: integer
+          description: Sum of all points.
