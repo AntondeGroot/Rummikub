@@ -47,8 +47,10 @@ module.exports = defineConfig([
       // God-object / size caps — stop a class growing one harmless method at a time. Specs are
       // exempt below (fixtures/provider setup make them legitimately long).
       'max-lines': ['error', { max: 200, skipBlankLines: true, skipComments: true }],
-      'max-lines-per-function': ['error', { max: 80, skipBlankLines: true, skipComments: true }],
+      'max-lines-per-function': ['error', { max: 25, skipBlankLines: true, skipComments: true }],
       'max-classes-per-file': ['error', 1],
+      // Same bar as PMD's CognitiveComplexity on the server: 15 per function at most.
+      'sonarjs/cognitive-complexity': ['error', 15],
       // Off: game randomness (shuffling tiles) is not security-sensitive, so this rule is noise here.
       'sonarjs/pseudo-random': 'off',
       // Off: TODO markers are deliberate, discoverable debt markers for ratcheted gates.

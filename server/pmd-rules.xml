@@ -34,4 +34,16 @@
     <exclude name="AvoidInstantiatingObjectsInLoops"/>
   </rule>
 
+  <!-- Same bar as the client's sonarjs/cognitive-complexity: 15 per method at most. PMD reports
+       at reportLevel and above, so 16 is the first value that fails. -->
+  <rule ref="category/java/design.xml/CognitiveComplexity">
+    <properties>
+      <property name="reportLevel" value="16"/>
+    </properties>
+  </rule>
+
+  <!-- Classes that do too much, know too much about other classes, and whose methods share little
+       state. The client's counterpart is max-lines plus max-classes-per-file. -->
+  <rule ref="category/java/design.xml/GodClass"/>
+
 </ruleset>

@@ -50,5 +50,12 @@
       <property name="max" value="2"/>
     </module>
 
+    <!-- Short methods, same bar as the client's max-lines-per-function. Blank lines don't count;
+         test methods are exempt in the suppressions. -->
+    <module name="MethodLength">
+      <property name="max" value="25"/>
+      <property name="countEmpty" value="false"/>
+    </module>
+
   </module>
 </module>
