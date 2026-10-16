@@ -1,0 +1,364 @@
+openapi: 3.1.0
+info:
+  title: GameRoom game-server contract
+  version: 1.0.0
+  description: |
+    What a game server must offer to be hosted by the GameRoom lobby. The GameRoom server calls these
+    endpoints; the game never calls the GameRoom, except for the finished callback (see `startGame`).
+    Endpoints common to every game's own client live in `shared-game-api.yml`, rules-specific ones in the
+    game's own spec. No path + method may appear in more than one of the three specs.
+
+    Besides the REST calls below, the contract has these parts:
+
+    **Registration.** The game is listed in the GameRoom's `games.yaml` with `baseUrl` (root of these
+    endpoints, server-to-server) and `healthUrl` (polled with HEAD; the game is hidden from the lobby
+    while it fails). On the Pi, `baseUrl` must keep the host `localhost`: the GameRoom client treats
+    any other host as a public URL for the settings iframe.
+
+    **Browser redirect.** Once the game is started, every player's browser is sent to
+    `/<gameId>/?sessionid={sessionId}&playerid={playerId}&locale={locale}`, served through nginx.
+
+    **Embedded settings** (only when `embeddedSettings: true` in `games.yaml`). The lobby shows
+    `{baseUrl}/settings?embed=1&lang={lang}&options={json}` in an iframe, where `options` is the
+    current option map as JSON. Messages over `postMessage` (names are historical and still carry
+    the `rummikub-` prefix for every game):
+    - iframe → lobby `{ type: 'rummikub-embed-ready' }` once it listens; the lobby then sends its state.
+    - lobby → iframe `{ type: 'rummikub-admin-status', isAdmin: boolean }`.
+    - iframe → lobby `{ type: 'rummikub-options-changed', options: { [key]: string } }` on every change.
+
+servers:
+  - url: /
+    description: Same-origin
+
+paths:
+  /games:
+    post:
+      summary: Create a session
+      description: Called when the room host starts the game; followed by addPlayer per player, then startGame.
+      operationId: createGame
+      tags: [gameroom]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewGameRequest'
+      responses:
+        '201':
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NewGameResponse'
+        '400':
+          description: Invalid request, e.g. more players than the game supports
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /games/{sessionId}:
+    get:
+      summary: Session health
+      description: Polled every 30 seconds. Any error removes the room from the lobby; `status` FINISHED ends it.
+      operationId: getGameStatus
+      tags: [gameroom]
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+      responses:
+        '200':
+          description: Session is alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameStatusResponse'
+        '404':
+          description: Session not found
+    post:
+      summary: Start the game
+      description: Called once all players are added. If this or addPlayer fails, the GameRoom deletes the session.
+      operationId: startGame
+      tags: [gameroom]
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartGameRequest'
+      responses:
+        '200':
+          description: Game started
+        '404':
+          description: Session not found
+        '409':
+          description: Game was already started
+      callbacks:
+        gameFinished:
+          '{$request.body#/callbackUrl}':
+            post:
+              summary: Tell the GameRoom the game has finished
+              description: Empty body. Best effort; the game logs and ignores failures.
+              operationId: notifyGameFinished
+              responses:
+                '200':
+                  description: Received
+                '404':
+                  description: The GameRoom no longer knows the room
+    delete:
+      summary: Delete the session
+      description: Called after 60 minutes without a `version` change, or when creating the session failed partway.
+      operationId: deleteGame
+      tags: [gameroom]
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+      responses:
+        '204':
+          description: Session deleted
+        '404':
+          description: Session was already gone (the GameRoom ignores this)
+
+  /games/{sessionId}/players:
+    post:
+      summary: Add a player
+      description: Called once per player, in turn order, before startGame.
+      operationId: addPlayer
+      tags: [gameroom]
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Player'
+      responses:
+        '201':
+          description: Player added
+        '404':
+          description: Session not found
+        '409':
+          description: Game already started, or it is full
+
+  /gamestates/{sessionId}:
+    get:
+      summary: Public game version, for stale detection
+      description: Polled every 30 seconds. Never contains private information such as a player's hand.
+      operationId: getGameVersion
+      tags: [gameroom]
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+      responses:
+        '200':
+          description: Current version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameVersion'
+        '404':
+          description: Session not found
+
+  /game-options:
+    get:
+      summary: Options the lobby offers before the game starts
+      description: Optional. When missing or failing, the lobby starts the game without options.
+      operationId: getGameOptions
+      tags: [gameroom]
+      parameters:
+        - $ref: '#/components/parameters/locale'
+      responses:
+        '200':
+          description: Configurable options
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GameOption'
+
+  /game-name:
+    get:
+      summary: The game's display name in a language
+      description: Optional. The lobby falls back to the name in `games.yaml`.
+      operationId: getGameName
+      tags: [gameroom]
+      parameters:
+        - $ref: '#/components/parameters/locale'
+      responses:
+        '200':
+          description: Localized name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameName'
+
+  /i18n/{lang}.json:
+    get:
+      summary: Translations for the option labels
+      description: Fetched by the lobby's browser to resolve `labelKey` and `descriptionKey` of each GameOption.
+      operationId: getTranslations
+      tags: [gameroom]
+      parameters:
+        - name: lang
+          in: path
+          required: true
+          schema:
+            type: string
+            example: nl
+      responses:
+        '200':
+          description: Flat or nested map of translation keys to text
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+        '404':
+          description: Language not available
+
+components:
+  parameters:
+    sessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema:
+        type: string
+    locale:
+      name: locale
+      in: query
+      required: false
+      description: Language code such as `en` or `nl`. Unknown codes fall back to English.
+      schema:
+        type: string
+
+  schemas:
+    NewGameRequest:
+      type: object
+      required: [roomName, maxPlayers]
+      properties:
+        roomName:
+          type: string
+        maxPlayers:
+          type: integer
+          minimum: 1
+          description: Number of players who joined the room, not the room's configured maximum.
+        gameOptions:
+          type: object
+          description: >
+            The values chosen in the lobby, keyed by GameOption.key. "true"/"false" arrive as booleans,
+            numeric strings as integers, everything else as a string. Absent when nothing was set.
+          additionalProperties: {}
+
+    NewGameResponse:
+      type: object
+      required: [sessionId]
+      properties:
+        sessionId:
+          type: string
+
+    Player:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        profilePic:
+          type: integer
+          minimum: 0
+          description: Zero-based global sprite index chosen in the lobby; the image is served by the GameRoom.
+
+    StartGameRequest:
+      type: object
+      properties:
+        botProfilePics:
+          type: array
+          items:
+            type: integer
+          description: Shuffled free sprite indices; each bot takes the next one, so no two share a picture.
+        callbackUrl:
+          type: string
+          description: Where to POST (empty body) when the game finishes. See the gameFinished callback.
+
+    GameStatus:
+      type: string
+      enum: [WAITING, IN_PROGRESS, FINISHED]
+      description: The GameRoom only acts on FINISHED, compared literally.
+
+    GameStatusResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: '#/components/schemas/GameStatus'
+
+    GameVersion:
+      type: object
+      required: [version]
+      properties:
+        version:
+          type: integer
+          format: int64
+          description: Changes on every state change. Unchanged for 60 minutes means the game is abandoned.
+
+    GameOption:
+      type: object
+      required: [key, labelKey, type, defaultValue]
+      description: >
+        The lobby picks the widget from the fields: type BOOLEAN is a checkbox, `choices` a dropdown,
+        anything else a text input.
+      properties:
+        key:
+          type: string
+          description: Key of this option in NewGameRequest.gameOptions.
+        labelKey:
+          type: string
+          description: Translation key, resolved from /i18n/{lang}.json.
+        descriptionKey:
+          type: string
+          description: Translation key of a longer explanation.
+        type:
+          type: string
+          enum: [BOOLEAN, INTEGER, ENUM]
+        defaultValue:
+          type: string
+          description: Default value as a string.
+        choices:
+          type: array
+          items:
+            type: string
+          description: Allowed values; ENUM only.
+        minValue:
+          type: integer
+          description: INTEGER only.
+        maxValue:
+          type: integer
+          description: INTEGER only.
+        adminOnly:
+          type: boolean
+          description: Shown to lobby administrators only.
+        incompatibleWith:
+          type: array
+          items:
+            type: string
+          description: Keys of options that cannot be enabled together with this one.
+
+    GameName:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+
+    ErrorResponse:
+      type: object
+      required: [message, code]
+      properties:
+        message:
+          type: string
+        code:
+          type: integer
+          description: HTTP status code.

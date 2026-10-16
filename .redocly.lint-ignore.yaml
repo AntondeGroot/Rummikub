@@ -1,0 +1,12 @@
+# Redocly lint exceptions. Scoped ignores (not a rule-off) so operation-4xx-response keeps catching
+# genuinely undocumented error responses elsewhere. Each of these only ever returns 200:
+#   - GET /game-options and GET /game-name: the only input is `locale`, and unknown codes fall back to English
+#   - GET /games: lists all games, no input
+# See https://redocly.com/docs/cli/ for the format.
+openapi/gameroom-api.yml:
+  operation-4xx-response:
+    - '#/paths/~1game-options/get/responses'
+    - '#/paths/~1game-name/get/responses'
+openapi/shared-game-api.yml:
+  operation-4xx-response:
+    - '#/paths/~1games/get/responses'

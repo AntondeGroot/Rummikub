@@ -1,0 +1,269 @@
+openapi: 3.1.0
+info:
+  title: Rummikub Game API
+  version: 1.0.0
+  description: |
+    The Rummikub-specific API, used by the Rummikub browser client. Creating, starting, health-checking
+    and deleting a session is the GameRoom's part and lives in `gameroom-api.yml`; the games list,
+    restart, players, leaving and scores are common to every game and live in `shared-game-api.yml`.
+    No path + method may appear in more than one of the three specs.
+
+    Turns are committed whole: the client rearranges the table locally, then sends the complete table it
+    wants. The server checks the turn as a unit, so a half-rearranged table never exists server-side.
+
+    Live updates (Server-Sent Events) are served at `/gamestates/{sessionId}/players/{playerId}/stream`,
+    one PlayerGameState per event. That endpoint is hand-written, so it is not part of this spec.
+
+servers:
+  # Relative to the serving origin; the generated client overrides it at runtime with environment.apiBaseUrl.
+  - url: /
+    description: Same-origin
+
+paths:
+  /gamestates/{sessionId}/players/{playerId}:
+    get:
+      summary: The game as one player sees it
+      description: >
+        Contains this player's own rack; other players appear with their tile count only. (The public,
+        rack-free version for the GameRoom is `GET /gamestates/{sessionId}` in the contract.)
+      operationId: getPlayerGameState
+      tags: [gamestates]
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+        - $ref: '#/components/parameters/playerId'
+        - name: stateVersion
+          in: query
+          description: The version of the game state currently held by the client
+          required: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Game state (new version)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerGameState'
+        '304':
+          description: Game state not modified (client is up-to-date)
+        '404':
+          description: Game or player not found
+
+  /moves/{sessionId}/{playerId}:
+    post:
+      summary: Finish the active player's turn
+      description: |
+        The active player either commits the table they arranged, or draws a tile instead.
+        A COMMIT is accepted only if all of these hold:
+        - every tile that was on the table at the start of the turn is still on it;
+        - every added tile comes from this player's rack, and at least one was added;
+        - every meld is a valid group or run;
+        - before their opening meld, the player only adds new melds (no table tiles touched) worth at
+          least the opening threshold (game option, 30 by default).
+      operationId: makeMove
+      tags: [moves]
+      parameters:
+        - $ref: '#/components/parameters/sessionId'
+        - $ref: '#/components/parameters/playerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoveRequest'
+      responses:
+        '200':
+          description: Move accepted; the state after the move
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerGameState'
+        '400':
+          description: Move rejected; nothing changed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MoveRejection'
+        '404':
+          description: Game or player not found
+        '409':
+          description: It is not this player's turn, or the game is not in progress
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  parameters:
+    sessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema:
+        type: string
+    playerId:
+      name: playerId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    GameStatus:
+      type: string
+      enum: [WAITING, IN_PROGRESS, FINISHED]
+
+    TileColor:
+      type: string
+      enum: [BLACK, BLUE, ORANGE, RED]
+
+    Tile:
+      type: object
+      required: [id, joker]
+      description: >
+        Every number/colour exists twice, so tiles are told apart by `id`. A joker has no colour or
+        number of its own; it takes the value its place in a meld gives it.
+      properties:
+        id:
+          type: string
+        joker:
+          type: boolean
+        color:
+          $ref: '#/components/schemas/TileColor'
+        number:
+          type: integer
+          minimum: 1
+          maximum: 13
+
+    MeldKind:
+      type: string
+      enum: [GROUP, RUN]
+      description: GROUP is one number in 3-4 different colours; RUN is 3+ consecutive numbers in one colour.
+
+    Meld:
+      type: object
+      required: [kind, tiles]
+      properties:
+        kind:
+          $ref: '#/components/schemas/MeldKind'
+        tiles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tile'
+          description: In table order; a joker's value follows from its position.
+
+    MeldPlacement:
+      type: object
+      required: [tileIds]
+      description: One meld of a proposed table, by tile id. Order matters for runs and jokers.
+      properties:
+        tileIds:
+          type: array
+          items:
+            type: string
+
+    MoveType:
+      type: string
+      enum: [COMMIT, DRAW]
+
+    MoveRequest:
+      type: object
+      required: [type]
+      properties:
+        type:
+          $ref: '#/components/schemas/MoveType'
+        table:
+          type: array
+          items:
+            $ref: '#/components/schemas/MeldPlacement'
+          description: The complete table after this turn. Required for COMMIT, ignored for DRAW.
+
+    MoveRejectionReason:
+      type: string
+      enum:
+        - INVALID_MELD
+        - TABLE_TILE_MISSING
+        - TILE_NOT_IN_RACK
+        - NOTHING_PLAYED
+        - OPENING_MELD_TOO_LOW
+        - OPENING_MELD_USES_TABLE
+
+    MoveRejection:
+      type: object
+      required: [message, code, reason]
+      properties:
+        message:
+          type: string
+        code:
+          type: integer
+          description: HTTP status code.
+        reason:
+          $ref: '#/components/schemas/MoveRejectionReason'
+        invalidMelds:
+          type: array
+          items:
+            type: integer
+          description: Indices into MoveRequest.table of the melds that are not valid, for highlighting.
+
+    PlayerSummary:
+      type: object
+      required: [id, name, rackSize, hasOpened]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        profilePic:
+          type: integer
+        rackSize:
+          type: integer
+          description: Number of tiles on this player's rack.
+        hasOpened:
+          type: boolean
+          description: Whether the player has made their opening meld.
+
+    PlayerGameState:
+      type: object
+      required: [version, status, players, table, rack, poolSize]
+      properties:
+        version:
+          type: integer
+          format: int64
+          description: Increments on every state change; used by clients to detect updates.
+        status:
+          $ref: '#/components/schemas/GameStatus'
+        activePlayerId:
+          type: string
+          description: Absent when the game is not in progress.
+        players:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlayerSummary'
+          description: Turn order.
+        table:
+          type: array
+          items:
+            $ref: '#/components/schemas/Meld'
+        rack:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tile'
+          description: The requesting player's own tiles.
+        poolSize:
+          type: integer
+          description: Tiles left to draw.
+        winnerId:
+          type: string
+          description: Set once the round is over.
+
+    ErrorResponse:
+      type: object
+      required: [message, code]
+      properties:
+        message:
+          type: string
+          description: Human-readable error message.
+        code:
+          type: integer
+          description: HTTP status code.
