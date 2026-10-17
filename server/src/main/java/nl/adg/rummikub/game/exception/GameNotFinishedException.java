@@ -1,0 +1,11 @@
+package nl.adg.rummikub.game.exception;
+
+public class GameNotFinishedException extends RuntimeException {
+    @java.io.Serial private static final long serialVersionUID = 1L;
+    public GameNotFinishedException(String sessionId) {
+        super("game not finished: " + sessionId);
+    }
+    public GameNotFinishedException(String sessionId, Throwable cause) {
+        super("game not finished: " + sessionId, cause);
+    }
+}
