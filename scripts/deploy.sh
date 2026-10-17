@@ -17,7 +17,7 @@ SSH="ssh -i ~/.ssh/pi_deploy_key $TARGET"
 SCP="scp -i ~/.ssh/pi_deploy_key"
 
 echo "🔨 Linting and testing the client..."
-(cd client && npm ci && npm run lint && npm run lint:styles && npm run format:check && CI=1 npx ng test --watch=false --coverage)
+(cd client && npm ci && npm run lint:openapi && npm run generate && npm run lint && npm run lint:styles && npm run format:check && CI=1 npx ng test --watch=false --coverage)
 
 # The frontend profile builds the client with base-href /rummikub/ and bundles it into the WAR.
 echo "🔨 Building frontend and running all backend tests..."

@@ -68,7 +68,7 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "coverageExclude": ["src/main.ts", "**/*.spec.ts"],
+            "coverageExclude": ["src/generated/**", "src/main.ts", "**/*.spec.ts"],
             "coverageThresholds": {
               "statements": 90,
               "branches": 90,

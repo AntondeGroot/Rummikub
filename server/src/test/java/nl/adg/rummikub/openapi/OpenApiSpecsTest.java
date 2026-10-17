@@ -1,0 +1,68 @@
+package nl.adg.rummikub.openapi;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
+import org.yaml.snakeyaml.Yaml;
+
+/**
+ * The three specs in openapi/ must not overlap: each says "no path + method may appear in more than
+ * one of them". Two generated controllers mapping the same route would make Spring pick one at
+ * request time, so the overlap is caught here instead.
+ */
+class OpenApiSpecsTest {
+
+    private static final Path SPEC_DIR = Path.of("..", "openapi");
+    private static final List<String> SPECS =
+            List.of("gameroom-api.yml", "shared-game-api.yml", "rummikub-api.yml");
+    private static final List<String> HTTP_METHODS =
+            List.of("get", "put", "post", "delete", "patch", "head", "options");
+
+    @Test
+    void noPathAndMethodAppearsInMoreThanOneSpec() throws IOException {
+        Map<String, List<String>> specsPerOperation = new HashMap<>();
+        for (String spec : SPECS) {
+            for (String operation : operationsIn(spec)) {
+                specsPerOperation.computeIfAbsent(operation, k -> new ArrayList<>()).add(spec);
+            }
+        }
+
+        assertThat(specsPerOperation).allSatisfy((operation, specs) -> assertThat(specs)
+                .as("specs declaring %s", operation)
+                .hasSize(1));
+    }
+
+    @Test
+    void routesDifferingOnlyInParameterNamesCountAsTheSame() {
+        assertThat(normalise("/games/{sessionId}/players")).isEqualTo(normalise("/games/{id}/players"));
+    }
+
+    /** Every "METHOD /path" in the spec, with path parameter names erased. */
+    private static List<String> operationsIn(String spec) throws IOException {
+        Map<String, Map<String, Object>> paths;
+        try (Reader reader = Files.newBufferedReader(SPEC_DIR.resolve(spec))) {
+            Map<String, Map<String, Map<String, Object>>> root = new Yaml().load(reader);
+            paths = root.get("paths");
+        }
+        List<String> operations = new ArrayList<>();
+        paths.forEach((path, item) -> item.keySet().stream()
+                .filter(HTTP_METHODS::contains)
+                .forEach(method -> operations.add(method.toUpperCase(Locale.ROOT) + " " + normalise(path))));
+        assertThat(operations).as("operations in %s", spec).isNotEmpty();
+        return operations;
+    }
+
+    /** /games/{sessionId} and /games/{id} are the same route to Spring. */
+    private static String normalise(String path) {
+        return path.replaceAll("\\{[^}]+}", "{}");
+    }
+}

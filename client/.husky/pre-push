@@ -1,1 +1,1 @@
-cd client && npm run build && npm test -- --watch=false --coverage
+cd client && npm run generate && npm run build && npm test -- --watch=false --coverage

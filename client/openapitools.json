@@ -1,0 +1,45 @@
+{
+  "$schema": "node_modules/@openapitools/openapi-generator-cli/config.schema.json",
+  "spaces": 2,
+  "generator-cli": {
+    "version": "7.26.0",
+    "generators": {
+      "gameroom": {
+        "generatorName": "typescript-angular",
+        "inputSpec": "../openapi/gameroom-api.yml",
+        "output": "src/generated/gameroom",
+        "additionalProperties": {
+          "ngVersion": "22",
+          "withInterfaces": true,
+          "fileNaming": "camelCase",
+          "supportsES6": true,
+          "enumPropertyNaming": "UPPERCASE"
+        }
+      },
+      "shared": {
+        "generatorName": "typescript-angular",
+        "inputSpec": "../openapi/shared-game-api.yml",
+        "output": "src/generated/shared",
+        "additionalProperties": {
+          "ngVersion": "22",
+          "withInterfaces": true,
+          "fileNaming": "camelCase",
+          "supportsES6": true,
+          "enumPropertyNaming": "UPPERCASE"
+        }
+      },
+      "game": {
+        "generatorName": "typescript-angular",
+        "inputSpec": "../openapi/rummikub-api.yml",
+        "output": "src/generated/game",
+        "additionalProperties": {
+          "ngVersion": "22",
+          "withInterfaces": true,
+          "fileNaming": "camelCase",
+          "supportsES6": true,
+          "enumPropertyNaming": "UPPERCASE"
+        }
+      }
+    }
+  }
+}

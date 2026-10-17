@@ -31,6 +31,9 @@
     <!-- Pinned above the Spring Boot BOM's managed version: Java 25 is non-LTS and older JaCoCo
          cannot instrument its class files. -->
     <jacoco.version>0.8.15</jacoco.version>
+    <openapi-generator.version>7.26.0</openapi-generator.version>
+    <openapi.dir>${project.basedir}/../openapi</openapi.dir>
+    <openapi.output>${project.build.directory}/generated-sources/openapi</openapi.output>
   </properties>
 
   <dependencies>
@@ -47,6 +50,18 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-tomcat</artifactId>
       <scope>provided</scope>
+    </dependency>
+
+    <!-- Required by the OpenAPI-generated code -->
+    <dependency>
+      <groupId>io.swagger.core.v3</groupId>
+      <artifactId>swagger-annotations</artifactId>
+      <version>2.2.55</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openapitools</groupId>
+      <artifactId>jackson-databind-nullable</artifactId>
+      <version>0.2.12</version>
     </dependency>
 
     <!-- Testing -->
@@ -279,6 +294,95 @@
           </execution>
         </executions>
       </plugin>
+
+      <!-- Spring interfaces and DTOs from the three specs, one package per spec: the specs are
+           self-contained and share schema names (GameStatus, Player, ErrorResponse) whose copies
+           differ slightly, so a shared model package would collide. The output is under target/,
+           so generated code never enters git and is regenerated on every build. -->
+      <plugin>
+        <groupId>org.openapitools</groupId>
+        <artifactId>openapi-generator-maven-plugin</artifactId>
+        <version>${openapi-generator.version}</version>
+        <configuration>
+          <generatorName>spring</generatorName>
+          <output>${openapi.output}</output>
+          <!-- Suffix models with "Dto" so they never collide with domain types (Tile, Meld, ...).
+               Only the Java name changes; the JSON wire format is untouched. -->
+          <modelNameSuffix>Dto</modelNameSuffix>
+          <supportingFilesToGenerate>ApiUtil.java</supportingFilesToGenerate>
+          <configOptions>
+            <delegatePattern>true</delegatePattern>
+            <sourceFolder>src/main/java</sourceFolder>
+            <useJakartaEe>true</useJakartaEe>
+            <useSpringBoot3>true</useSpringBoot3>
+            <!-- Optional container fields default to null rather than an empty collection, so
+                 NullAway sees their real nullability and the wire keeps omitting them. -->
+            <containerDefaultToNull>true</containerDefaultToNull>
+            <!-- Leave null handling to the global ObjectMapper (the pre-7.24 behaviour); set
+                 explicitly to silence the generator's warning about the default. -->
+            <generateJsonIncludeAnnotations>false</generateJsonIncludeAnnotations>
+            <generateJsonSetterNullsAnnotations>false</generateJsonSetterNullsAnnotations>
+          </configOptions>
+        </configuration>
+        <executions>
+          <!-- What the GameRoom server calls -->
+          <execution>
+            <id>openapi-gameroom</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${openapi.dir}/gameroom-api.yml</inputSpec>
+              <apiPackage>nl.adg.rummikub.generated.gameroom.api</apiPackage>
+              <modelPackage>nl.adg.rummikub.generated.gameroom.model</modelPackage>
+            </configuration>
+          </execution>
+          <!-- What every game offers its own client -->
+          <execution>
+            <id>openapi-shared</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${openapi.dir}/shared-game-api.yml</inputSpec>
+              <apiPackage>nl.adg.rummikub.generated.shared.api</apiPackage>
+              <modelPackage>nl.adg.rummikub.generated.shared.model</modelPackage>
+            </configuration>
+          </execution>
+          <!-- The Rummikub rules-specific endpoints -->
+          <execution>
+            <id>openapi-rummikub</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${openapi.dir}/rummikub-api.yml</inputSpec>
+              <apiPackage>nl.adg.rummikub.generated.game.api</apiPackage>
+              <modelPackage>nl.adg.rummikub.generated.game.model</modelPackage>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Adds the generated sources to the compile path -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>add-generated-sources</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${openapi.output}/src/main/java</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
@@ -301,6 +405,19 @@
                 <configuration>
                   <executable>npm</executable>
                   <arguments><argument>ci</argument></arguments>
+                  <workingDirectory>${project.basedir}/../client</workingDirectory>
+                </configuration>
+              </execution>
+              <execution>
+                <id>npm-generate</id>
+                <phase>prepare-package</phase>
+                <goals><goal>exec</goal></goals>
+                <configuration>
+                  <executable>npm</executable>
+                  <arguments>
+                    <argument>run</argument>
+                    <argument>generate</argument>
+                  </arguments>
                   <workingDirectory>${project.basedir}/../client</workingDirectory>
                 </configuration>
               </execution>

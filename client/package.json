@@ -1,16 +1,23 @@
 {
   "name": "client",
   "version": "0.0.0",
+  "overrides": {
+    "get-uri": {
+      "basic-ftp": "^6.2.3"
+    }
+  },
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "generate": "openapi-generator-cli generate && node scripts/nocheck-generated.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "lint": "ng lint --max-warnings=0",
     "format:check": "prettier --check .",
     "format:write": "prettier --write .",
     "lint:styles": "stylelint \"src/**/*.css\"",
+    "lint:openapi": "redocly lint --config ../.redocly.yaml",
     "prepare": "[ -n \"$CI\" ] || (cd .. && git config core.hooksPath client/.husky)",
     "audit": "audit-ci --config audit-ci.jsonc"
   },
@@ -31,6 +38,8 @@
     "@angular/cli": "^22.2.2",
     "@angular/compiler-cli": "^22.2.0",
     "@eslint/js": "^10.0.1",
+    "@openapitools/openapi-generator-cli": "^2.41.0",
+    "@redocly/cli": "^2.64.1",
     "@vitest/coverage-v8": "^5.0.5",
     "angular-eslint": "22.6.0",
     "audit-ci": "^7.1.0",
