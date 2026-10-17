@@ -5,7 +5,4 @@ public class SessionNotFoundException extends RuntimeException {
     public SessionNotFoundException(String sessionId) {
         super("game session not found: " + sessionId);
     }
-    public SessionNotFoundException(String sessionId, Throwable cause) {
-        super("game session not found: " + sessionId, cause);
-    }
 }
