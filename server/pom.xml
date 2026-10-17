@@ -312,6 +312,9 @@
           <supportingFilesToGenerate>ApiUtil.java</supportingFilesToGenerate>
           <configOptions>
             <delegatePattern>true</delegatePattern>
+            <!-- One interface per tag instead of per first path segment, so the names match the
+                 client's services and differ between specs (OpenApiSpecsTest keeps tags unique). -->
+            <useTags>true</useTags>
             <sourceFolder>src/main/java</sourceFolder>
             <useJakartaEe>true</useJakartaEe>
             <useSpringBoot3>true</useSpringBoot3>

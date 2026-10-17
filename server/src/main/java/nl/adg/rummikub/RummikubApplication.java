@@ -4,11 +4,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
-import org.springframework.context.annotation.FullyQualifiedAnnotationBeanNameGenerator;
 
-// Beans are named by fully qualified class name: each spec generates into its own package, and two
-// specs can produce the same simple name (GamesApiController in both gameroom and shared).
-@SpringBootApplication(nameGenerator = FullyQualifiedAnnotationBeanNameGenerator.class)
+@SpringBootApplication
 public class RummikubApplication extends SpringBootServletInitializer {
 
 	public static void main(String[] args) {
