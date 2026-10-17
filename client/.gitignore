@@ -39,6 +39,9 @@ testem.log
 /typings
 __screenshots__/
 
+# Generated from openapi/ by `npm run generate`
+/src/generated
+
 # System files
 .DS_Store
 Thumbs.db
