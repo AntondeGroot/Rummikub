@@ -1,0 +1,66 @@
+M0: Skeleton and deploy
+
+1. ✅ Three specs in openapi/ (gameroom, shared, rummikub), with Redocly config.
+2. Copy the Maven and npm setup from Qwixx: quality gates, formatting, coverage, Renovate config and the GitHub ruleset.
+3. Generate server and client code from the three specs, one package per spec. Generated code stays out of git.
+4. Set up ci.yml with openapi-lint, backend, frontend, e2e and the ci gate job.
+5. Add the GameRoom endpoints backed by an in-memory store: create, join, start, get, delete, game-options, game-name, i18n.
+6. Build the Angular shell: an empty board page with routing.
+7. Package as a WAR (rummikub.war), with deploy.sh, diagnose.sh and @PreDestroy cleanup.
+8. In Raspberry-Pi-Game-Server, add Rummikub to games.yaml and nginx.conf.
+9. Deploy it for the first time: GameRoom can create and start a game that shows an empty board.
+
+M1: Rules engine (plain Java, no Spring)
+
+1. Tiles and the 106-tile set, a shuffle you can seed, the draw pool.
+2. Checking runs (same colour, 3 or more in a row, no wrap from 13 to 1) and groups (same number, 3–4 different colours).
+3. Jokers in runs and groups, and how much a meld scores.
+4. Checking a committed turn by comparing tables: every table tile is still there, played tiles came from the rack, at least one tile was played, every meld is valid. Each failure maps to a MoveRejectionReason.
+5. Opening meld: worth at least 30, uses rack tiles only.
+6. Drawing a tile, and how the game ends once the pool is empty.
+7. Winning and scoring: the winner collects the other players' rack totals, with a joker worth 30.
+8. Raise test strength: edge-case tables and mutation testing until the score is high.
+
+M2: Playable multiplayer
+
+1. Game session: turn order, a lock, state versioning. Copy from Qwixx's GameSession.
+2. GET /gamestates/{id}/players/{playerId} with the stateVersion check that returns 304. Other players' racks show only a tile count.
+3. SSE updates. Decision needed: push each player their own state, or push only "version changed" and let the client fetch.
+4. POST /moves for COMMIT and DRAW, returning a rejection with the invalid melds.
+5. Client rack and table: tap-to-select, a local working copy of the table, a reset button, commit and draw buttons.
+6. Show rejections by highlighting the invalid melds, and allow a retry.
+7. Turn indicator, opponents' tile counts, tiles left in the pool.
+8. End screen with scores, the gameFinished callback to GameRoom, restart.
+
+M3: UX and polish
+
+1. Drag-and-drop between rack and table, plus splitting and merging melds.
+2. Sort the rack by colour or by number, and allow manual ordering.
+3. Mobile layout: tile size, a table that scrolls, landscape.
+4. i18n in Dutch and English.
+5. Rules page.
+6. Playwright tests: a full game, a rejected move, two browsers playing each other.
+
+M4: Options and embedding
+
+1. Option model and /game-options.
+2. Opening threshold and joker value.
+3. Turn timer that draws automatically when time runs out. The scheduler is shut down cleanly on undeploy.
+4. Multiple rounds with a running score.
+5. /settings?embed=1 page with the postMessage protocol.
+6. End-to-end check inside GameRoom.
+
+M5: Bots
+
+1. Bot interface and BotTurnDriver, copied from Qwixx.
+2. Bot version 1: plays melds from its rack only, opens once it has 30 points, otherwise draws.
+3. BotSimulator: win rates, and the number of invalid moves must be 0.
+4. Bot version 2: also adds tiles to melds already on the table.
+5. Bot version 2: searches with full table rearrangement, within a time limit.
+6. Difficulty levels and bot profile pictures.
+
+M6: Extras
+
+1. Opponents watch your rearranging live, through a spectator stream of your working table.
+2. Sounds.
+3. README preview images, generated the same way as in Qwixx.
