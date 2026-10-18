@@ -7,8 +7,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.jayway.jsonpath.JsonPath;
+import java.util.UUID;
 import nl.adg.rummikub.game.GameRegistry;
 import nl.adg.rummikub.game.GameSession;
+import nl.adg.rummikub.game.Player;
 import nl.adg.rummikub.game.SessionStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -79,5 +81,57 @@ class GameroomApiDelegateImplTest {
                 .andExpect(jsonPath("$.message").value("request body is not valid JSON"));
 
         assertThat(GameRegistry.getAllGames()).isEmpty();
+    }
+
+    @Test
+    void addPlayer_addsThePlayerToTheSession() throws Exception {
+        String sessionId = GameRegistry.createGame("Kitchen table", 4);
+        String playerId = "3f2a9c1e-7b4d-4e8a-9c2f-1d6b8e0a5c73";
+
+        mockMvc.perform(post("/games/{sessionId}/players", sessionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"id\":\"" + playerId + "\",\"name\":\"Ann\",\"profilePic\":7}"))
+                .andExpect(status().isCreated());
+
+        assertThat(GameRegistry.getGameOrThrow(sessionId).players())
+                .containsExactly(new Player(UUID.fromString(playerId), "Ann", 7));
+    }
+
+    @Test
+    void addPlayer_returns404ForAnUnknownSession() throws Exception {
+        mockMvc.perform(post("/games/{sessionId}/players", "no-such-session")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"id\":\"3f2a9c1e-7b4d-4e8a-9c2f-1d6b8e0a5c73\",\"name\":\"Ann\"}"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value(404))
+                .andExpect(jsonPath("$.message").value(containsString("no-such-session")));
+    }
+
+    @Test
+    void addPlayer_returns409OnceTheSessionIsFull() throws Exception {
+        String sessionId = GameRegistry.createGame("Kitchen table", 1);
+        GameRegistry.getGameOrThrow(sessionId).addPlayer(Player.of("Ann"));
+
+        mockMvc.perform(post("/games/{sessionId}/players", sessionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"id\":\"3f2a9c1e-7b4d-4e8a-9c2f-1d6b8e0a5c73\",\"name\":\"Bob\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value(409));
+
+        assertThat(GameRegistry.getGameOrThrow(sessionId).players())
+                .extracting(Player::name).containsExactly("Ann");
+    }
+
+    @Test
+    void addPlayer_rejectsAnIdThatIsNotAUuid() throws Exception {
+        String sessionId = GameRegistry.createGame("Kitchen table", 4);
+
+        mockMvc.perform(post("/games/{sessionId}/players", sessionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"id\":\"player-1\",\"name\":\"Ann\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400));
+
+        assertThat(GameRegistry.getGameOrThrow(sessionId).players()).isEmpty();
     }
 }

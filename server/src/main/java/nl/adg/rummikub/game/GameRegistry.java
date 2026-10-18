@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import nl.adg.rummikub.game.exception.SessionNotFoundException;
 
 public class GameRegistry {
 
@@ -21,6 +22,12 @@ public class GameRegistry {
     @Nullable
     public static GameSession getGame(String sessionId) {
         return SESSIONS.get(sessionId);
+    }
+
+    public static GameSession getGameOrThrow(String sessionId) {
+        GameSession session = SESSIONS.get(sessionId);
+        if (session == null) throw new SessionNotFoundException(sessionId);
+        return session;
     }
 
     public static List<GameSession> getAllGames() {
