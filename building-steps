@@ -1,6 +1,6 @@
 M0: Skeleton and deploy
 
-1. ✅ Three specs in openapi/ (gameroom, shared, rummikub), with Redocly config.
+1. ✅ Three specs in openapi/ (gameroom, game-session, rummikub), with Redocly config.
 2. ✅ Copy the Maven and npm setup from Qwixx: quality gates, formatting, coverage, Renovate config and the GitHub ruleset.
 3. ✅ Generate server and client code from the three specs, one package per spec. Generated code stays out of git.
 4. Set up ci.yml with openapi-lint, backend, frontend, e2e and the ci gate job.

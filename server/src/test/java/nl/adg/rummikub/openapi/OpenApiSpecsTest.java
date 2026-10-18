@@ -23,7 +23,7 @@ class OpenApiSpecsTest {
 
     private static final Path SPEC_DIR = Path.of("..", "openapi");
     private static final List<String> SPECS =
-            List.of("gameroom-api.yml", "shared-game-api.yml", "rummikub-api.yml");
+            List.of("gameroom-api.yml", "game-session-api.yml", "rummikub-api.yml");
     private static final List<String> HTTP_METHODS =
             List.of("get", "put", "post", "delete", "patch", "head", "options");
 

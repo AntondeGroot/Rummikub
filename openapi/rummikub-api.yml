@@ -5,7 +5,7 @@ info:
   description: |
     The Rummikub-specific API, used by the Rummikub browser client. Creating, starting, health-checking
     and deleting a session is the GameRoom's part and lives in `gameroom-api.yml`; the games list,
-    restart, players, leaving and scores are common to every game and live in `shared-game-api.yml`.
+    restart, players, leaving and scores are common to every game and live in `game-session-api.yml`.
     No path + method may appear in more than one of the three specs.
 
     Turns are committed whole: the client rearranges the table locally, then sends the complete table it

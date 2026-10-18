@@ -4,8 +4,8 @@
 apis:
   gameroom:
     root: openapi/gameroom-api.yml
-  shared:
-    root: openapi/shared-game-api.yml
+  session:
+    root: openapi/game-session-api.yml
   rummikub:
     root: openapi/rummikub-api.yml
 

@@ -342,14 +342,14 @@
           </execution>
           <!-- What every game offers its own client -->
           <execution>
-            <id>openapi-shared</id>
+            <id>openapi-session</id>
             <goals>
               <goal>generate</goal>
             </goals>
             <configuration>
-              <inputSpec>${openapi.dir}/shared-game-api.yml</inputSpec>
-              <apiPackage>nl.adg.rummikub.generated.shared.api</apiPackage>
-              <modelPackage>nl.adg.rummikub.generated.shared.model</modelPackage>
+              <inputSpec>${openapi.dir}/game-session-api.yml</inputSpec>
+              <apiPackage>nl.adg.rummikub.generated.session.api</apiPackage>
+              <modelPackage>nl.adg.rummikub.generated.session.model</modelPackage>
             </configuration>
           </execution>
           <!-- The Rummikub rules-specific endpoints -->

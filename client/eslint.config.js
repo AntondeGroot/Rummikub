@@ -55,7 +55,7 @@ module.exports = defineConfig([
             {
               group: ['**/generated/*/**'],
               message:
-                "Import from the spec's index instead: '…/generated/game', '…/generated/shared' or '…/generated/gameroom'.",
+                "Import from the spec's index instead: '…/generated/game', '…/generated/session' or '…/generated/gameroom'.",
             },
           ],
         },
