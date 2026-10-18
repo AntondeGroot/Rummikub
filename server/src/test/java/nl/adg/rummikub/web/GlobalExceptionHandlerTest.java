@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import nl.adg.rummikub.game.exception.GameAlreadyStartedException;
 import nl.adg.rummikub.game.exception.GameNotFinishedException;
 import nl.adg.rummikub.game.exception.GameNotStartedException;
+import nl.adg.rummikub.game.exception.SessionFullException;
 import nl.adg.rummikub.game.exception.SessionNotFoundException;
 import nl.adg.rummikub.rules.IllegalMoveException;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +27,7 @@ class GlobalExceptionHandlerTest {
         @GetMapping("/throw/conflict1")    void conflict1()   { throw new GameAlreadyStartedException("s1"); }
         @GetMapping("/throw/conflict2")    void conflict2()   { throw new GameNotStartedException("s1"); }
         @GetMapping("/throw/conflict3")    void conflict3()   { throw new GameNotFinishedException("s1"); }
+        @GetMapping("/throw/conflict4")    void conflict4()   { throw new SessionFullException("s1"); }
         @GetMapping("/throw/bad-request")  void badRequest()  { throw new IllegalMoveException("illegal"); }
         @GetMapping("/throw/no-message")   void noMessage()   { throw new IllegalArgumentException(); }
     }
@@ -65,6 +67,13 @@ class GlobalExceptionHandlerTest {
     @Test
     void gameNotFinished_returns409() throws Exception {
         mvc.perform(get("/throw/conflict3"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value(409));
+    }
+
+    @Test
+    void sessionFull_returns409() throws Exception {
+        mvc.perform(get("/throw/conflict4"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value(409));
     }
