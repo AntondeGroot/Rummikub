@@ -3,6 +3,7 @@ package nl.adg.rummikub.services;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -13,8 +14,11 @@ import nl.adg.rummikub.game.GameRegistry;
 import nl.adg.rummikub.game.GameSession;
 import nl.adg.rummikub.game.Player;
 import nl.adg.rummikub.game.SessionStatus;
+import nl.adg.rummikub.generated.gameroom.model.GameStatusDto;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -152,6 +156,37 @@ class GameroomApiDelegateImplTest {
         GameRegistry.removeGame(sessionId);
 
         mockMvc.perform(delete("/games/{sessionId}", sessionId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value(404));
+    }
+
+    @Test
+    void getGameStatus_reportsInProgressOnceTheGameHasStarted() throws Exception {
+        String sessionId = GameRegistry.createGame("Kitchen table", 4);
+        GameSession session = GameRegistry.getGameOrThrow(sessionId);
+        session.addPlayer(Player.of("Ann"));
+        session.start();
+
+        mockMvc.perform(get("/games/{sessionId}", sessionId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("IN_PROGRESS"));
+    }
+
+    /**
+     * Runs over the spec's statuses: valueOf fails for a status the domain lacks. The other
+     * direction, a domain status the spec lacks, already fails to compile in toDto's switch.
+     */
+    @ParameterizedTest
+    @EnumSource(GameStatusDto.class)
+    void toDto_mapsEverySessionStatusToTheSpecStatusOfTheSameName(GameStatusDto specStatus) {
+        SessionStatus domainStatus = SessionStatus.valueOf(specStatus.name());
+
+        assertThat(GameroomApiDelegateImpl.toDto(domainStatus)).isEqualTo(specStatus);
+    }
+
+    @Test
+    void getGameStatus_returns404ForAnUnknownSession() throws Exception {
+        mockMvc.perform(get("/games/{sessionId}", "no-such-session"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value(404));
     }

@@ -3,7 +3,10 @@ package nl.adg.rummikub.services;
 import java.util.UUID;
 import nl.adg.rummikub.game.GameRegistry;
 import nl.adg.rummikub.game.Player;
+import nl.adg.rummikub.game.SessionStatus;
 import nl.adg.rummikub.generated.gameroom.api.GameroomApiDelegate;
+import nl.adg.rummikub.generated.gameroom.model.GameStatusDto;
+import nl.adg.rummikub.generated.gameroom.model.GameStatusResponseDto;
 import nl.adg.rummikub.generated.gameroom.model.NewGameRequestDto;
 import nl.adg.rummikub.generated.gameroom.model.NewGameResponseDto;
 import nl.adg.rummikub.generated.gameroom.model.PlayerDto;
@@ -39,5 +42,20 @@ public class GameroomApiDelegateImpl implements GameroomApiDelegate {
     GameRegistry.removeGame(sessionId);
     log.info("Game deleted: sessionId={}", sessionId);
     return ResponseEntity.noContent().build();
+  }
+
+  @Override
+  public ResponseEntity<GameStatusResponseDto> getGameStatus(String sessionId) {
+    SessionStatus status = GameRegistry.getGameOrThrow(sessionId).status();
+    return ResponseEntity.ok(new GameStatusResponseDto(toDto(status)));
+  }
+
+  /** An exhaustive switch, so a status added to SessionStatus fails the build instead of the poll. */
+  static GameStatusDto toDto(SessionStatus status) {
+    return switch (status) {
+      case WAITING -> GameStatusDto.WAITING;
+      case IN_PROGRESS -> GameStatusDto.IN_PROGRESS;
+      case FINISHED -> GameStatusDto.FINISHED;
+    };
   }
 }
