@@ -1,6 +1,6 @@
 package nl.adg.rummikub.services;
 
-import nl.adg.rummikub.generated.shared.api.GamesApiDelegate;
+import nl.adg.rummikub.generated.session.api.GamesApiDelegate;
 import org.springframework.stereotype.Service;
 
 @Service

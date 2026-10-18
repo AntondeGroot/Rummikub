@@ -5,7 +5,7 @@ info:
   description: |
     What a game server must offer to be hosted by the GameRoom lobby. The GameRoom server calls these
     endpoints; the game never calls the GameRoom, except for the finished callback (see `startGame`).
-    Endpoints common to every game's own client live in `shared-game-api.yml`, rules-specific ones in the
+    Endpoints common to every game's own client live in `game-session-api.yml`, rules-specific ones in the
     game's own spec. No path + method may appear in more than one of the three specs.
 
     Besides the REST calls below, the contract has these parts:

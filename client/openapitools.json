@@ -16,10 +16,10 @@
           "enumPropertyNaming": "UPPERCASE"
         }
       },
-      "shared": {
+      "session": {
         "generatorName": "typescript-angular",
-        "inputSpec": "../openapi/shared-game-api.yml",
-        "output": "src/generated/shared",
+        "inputSpec": "../openapi/game-session-api.yml",
+        "output": "src/generated/session",
         "additionalProperties": {
           "ngVersion": "22",
           "withInterfaces": true,

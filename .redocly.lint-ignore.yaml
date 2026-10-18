@@ -7,6 +7,6 @@ openapi/gameroom-api.yml:
   operation-4xx-response:
     - '#/paths/~1game-options/get/responses'
     - '#/paths/~1game-name/get/responses'
-openapi/shared-game-api.yml:
+openapi/game-session-api.yml:
   operation-4xx-response:
     - '#/paths/~1games/get/responses'

@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Shared game API
+  title: Game session API
   version: 1.0.0
   description: |
     Endpoints every hosted game offers to its own browser client, independent of the game's rules:
