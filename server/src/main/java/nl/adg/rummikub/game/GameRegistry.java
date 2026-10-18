@@ -35,7 +35,7 @@ public class GameRegistry {
     }
 
     public static void removeGame(String sessionId) {
-        SESSIONS.remove(sessionId);
+        if (SESSIONS.remove(sessionId) == null) throw new SessionNotFoundException(sessionId);
     }
 
     // visible for testing

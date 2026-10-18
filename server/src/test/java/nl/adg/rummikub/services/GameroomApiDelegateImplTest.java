@@ -2,6 +2,7 @@ package nl.adg.rummikub.services;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -133,5 +134,25 @@ class GameroomApiDelegateImplTest {
                 .andExpect(jsonPath("$.code").value(400));
 
         assertThat(GameRegistry.getGameOrThrow(sessionId).players()).isEmpty();
+    }
+
+    @Test
+    void deleteGame_removesTheSession() throws Exception {
+        String sessionId = GameRegistry.createGame("Kitchen table", 4);
+
+        mockMvc.perform(delete("/games/{sessionId}", sessionId))
+                .andExpect(status().isNoContent());
+
+        assertThat(GameRegistry.getGame(sessionId)).isNull();
+    }
+
+    @Test
+    void deleteGame_returns404WhenTheSessionIsAlreadyGone() throws Exception {
+        String sessionId = GameRegistry.createGame("Kitchen table", 4);
+        GameRegistry.removeGame(sessionId);
+
+        mockMvc.perform(delete("/games/{sessionId}", sessionId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value(404));
     }
 }

@@ -33,4 +33,11 @@ public class GameroomApiDelegateImpl implements GameroomApiDelegate {
     log.info("Player added: sessionId={} playerId={}", sessionId, player.id());
     return ResponseEntity.status(HttpStatus.CREATED).build();
   }
+
+  @Override
+  public ResponseEntity<Void> deleteGame(String sessionId) {
+    GameRegistry.removeGame(sessionId);
+    log.info("Game deleted: sessionId={}", sessionId);
+    return ResponseEntity.noContent().build();
+  }
 }
