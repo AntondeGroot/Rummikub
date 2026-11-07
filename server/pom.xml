@@ -31,7 +31,7 @@
     <!-- Pinned above the Spring Boot BOM's managed version: Java 25 is non-LTS and older JaCoCo
          cannot instrument its class files. -->
     <jacoco.version>0.8.15</jacoco.version>
-    <openapi-generator.version>7.26.0</openapi-generator.version>
+    <openapi-generator.version>7.27.0</openapi-generator.version>
     <openapi.dir>${project.basedir}/../openapi</openapi.dir>
     <openapi.output>${project.build.directory}/generated-sources/openapi</openapi.output>
   </properties>
@@ -61,7 +61,7 @@
     <dependency>
       <groupId>org.openapitools</groupId>
       <artifactId>jackson-databind-nullable</artifactId>
-      <version>0.2.12</version>
+      <version>0.2.13</version>
     </dependency>
 
     <!-- Testing -->
@@ -123,7 +123,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
-        <version>3.6.3</version>
+        <version>3.7.0</version>
         <executions>
           <execution>
             <goals>
