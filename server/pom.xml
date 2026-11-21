@@ -23,15 +23,15 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <spotbugs.version>4.10.5.0</spotbugs.version>
     <checkstyle-plugin.version>3.6.0</checkstyle-plugin.version>
-    <checkstyle-tool.version>14.3.0</checkstyle-tool.version>
+    <checkstyle-tool.version>14.4.0</checkstyle-tool.version>
     <pmd.version>3.28.0</pmd.version>
-    <spotless.version>3.10.4</spotless.version>
-    <errorprone.version>2.50.0</errorprone.version>
-    <nullaway.version>0.14.2</nullaway.version>
+    <spotless.version>3.12.0</spotless.version>
+    <errorprone.version>2.53.0</errorprone.version>
+    <nullaway.version>0.14.4</nullaway.version>
     <!-- Pinned above the Spring Boot BOM's managed version: Java 25 is non-LTS and older JaCoCo
          cannot instrument its class files. -->
-    <jacoco.version>0.8.15</jacoco.version>
-    <openapi-generator.version>7.26.0</openapi-generator.version>
+    <jacoco.version>0.8.16</jacoco.version>
+    <openapi-generator.version>7.27.0</openapi-generator.version>
     <openapi.dir>${project.basedir}/../openapi</openapi.dir>
     <openapi.output>${project.build.directory}/generated-sources/openapi</openapi.output>
   </properties>
@@ -56,12 +56,12 @@
     <dependency>
       <groupId>io.swagger.core.v3</groupId>
       <artifactId>swagger-annotations</artifactId>
-      <version>2.2.55</version>
+      <version>3.0.0</version>
     </dependency>
     <dependency>
       <groupId>org.openapitools</groupId>
       <artifactId>jackson-databind-nullable</artifactId>
-      <version>0.2.12</version>
+      <version>0.2.13</version>
     </dependency>
 
     <!-- Testing -->
@@ -123,7 +123,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
-        <version>3.6.3</version>
+        <version>3.7.0</version>
         <executions>
           <execution>
             <goals>
@@ -399,7 +399,7 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>
-            <version>3.6.4</version>
+            <version>3.7.0</version>
             <executions>
               <execution>
                 <id>npm-ci</id>
